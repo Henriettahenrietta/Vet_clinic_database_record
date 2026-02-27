@@ -1,8 +1,8 @@
-Create table animals(
-id int (100),
-name char (100),
-date_of_birth date (200),
-escape_attempts int (100),
-neutered boolean(50),
-weight_kg decimal (10)
+CREATE TABLE animals (
+    id INT PRIMARY KEY,
+    name VARCHAR(100),
+    date_of_birth DATE,
+    escape_attempts INT,
+    neutered BOOLEAN,
+    weight_kg DECIMAL(10, 2) 
 );
