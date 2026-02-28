@@ -47,3 +47,41 @@ FOREIGN KEY (species_id) REFERENCES species(id);
 ALTER TABLE animals
 ADD CONSTRAINT fk_owner
 FOREIGN KEY (owner_id) REFERENCES owners(id);
+
+
+/* =========================================================
+   CREATE VETS TABLE
+   ========================================================= */
+CREATE TABLE IF NOT EXISTS vets (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100),
+    age INT,
+    date_of_graduation DATE
+);
+
+/* =========================================================
+   JOIN TABLE: SPECIALIZATIONS (vets ↔ species)
+   ========================================================= */
+CREATE TABLE IF NOT EXISTS specializations (
+    vet_id INT,
+    species_id INT,
+    PRIMARY KEY (vet_id, species_id),
+    CONSTRAINT fk_vet
+        FOREIGN KEY (vet_id) REFERENCES vets(id),
+    CONSTRAINT fk_species
+        FOREIGN KEY (species_id) REFERENCES species(id)
+);
+
+/* =========================================================
+   JOIN TABLE: VISITS (animals ↔ vets)
+   ========================================================= */
+CREATE TABLE IF NOT EXISTS visits (
+    animal_id INT,
+    vet_id INT,
+    visit_date DATE,
+    PRIMARY KEY (animal_id, vet_id, visit_date),
+    CONSTRAINT fk_animal
+        FOREIGN KEY (animal_id) REFERENCES animals(id),
+    CONSTRAINT fk_vet_visit
+        FOREIGN KEY (vet_id) REFERENCES vets(id)
+);
