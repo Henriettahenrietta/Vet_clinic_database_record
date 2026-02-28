@@ -20,3 +20,221 @@ SELECT * FROM animals WHERE neutered = true;
 SELECT * FROM animals WHERE name <> 'Gabumon';
 /*Find all animals with a weight between 10.4kg and 17.3kg */
 SELECT * FROM animals WHERE weight_kg BETWEEN 10.4 AND 17.3;
+
+
+-- Transactions
+
+-- Inside a transaction update the animals table by setting the species column to unspecified
+BEGIN TRANSACTION;
+UPDATE animals
+SET species ='unspecified';
+
+-- To Rollback
+ROLLBACK;
+
+-- Update the animals table by setting the species column to digimon for all 
+-- animals that have a name ending in mon.
+BEGIN TRANSACTION;
+UPDATE animals
+SET species = 'digimon'
+WHERE animal_name LIKE '%mon';
+
+-- Update the animals table by setting the species column to pokemon for all 
+-- animals that don't have species already set.
+UPDATE animals
+SET species = 'pokemon'
+WHERE animal_name NOT LIKE '%mon';
+
+-- Commit the transaction
+COMMIT;
+
+-- Inside a transaction delete all records in the animals table
+BEGIN TRANSACTION;
+DELETE from animals;
+
+-- To Rollback
+ROLLBACK;
+
+-- Inside a transaction: 
+-- Delete all animals born after Jan 1st, 2022.
+BEGIN TRANSACTION;
+DELETE FROM animals WHERE date_of_birth > '2022-01-01';
+
+-- Create a savepoint for the transaction.
+SAVEPOINT animals_savepoint;
+
+-- Update all animals' weight to be their weight multiplied by -1.
+UPDATE animals
+SET weight_kg = weight_kg * -1;
+
+-- Rollback to the savepoint
+ROLLBACK TO animals_savepoint;
+
+-- Update all animals' weights that are negative to be their weight multiplied by -1.
+UPDATE animals
+SET weight_kg = weight_kg * -1
+WHERE weight_kg < 0;
+
+-- Commit the transaction
+COMMIT;
+
+-- How many animals are there?
+SELECT COUNT(animal_name) FROM animals;
+
+-- How many animals have never tried to escape?
+SELECT COUNT(animal_name) FROM animals WHERE escape_attempts = 0;
+
+-- What is the average weight of animals?
+SELECT AVG(weight_kg) FROM animals;
+
+-- Who escapes the most, neutered or not neutered animals?
+SELECT neutered, SUM(escape_attempts)
+FROM animals
+GROUP BY neutered
+ORDER BY SUM(escape_attempts) DESC;
+-- Neutered animals escape the most
+
+-- What is the minimum and maximum weight of each type of animal?
+SELECT Min(weight_kg), MAX(weight_kg) FROM animals;
+
+-- Min-Weight is 5.kg and Max-weight is 45kg
+
+-- What is the average number of escape attempts per animal type of those born between 1990 and 2000?
+SELECT species, AVG(escape_attempts)
+FROM animals
+WHERE date_of_birth BETWEEN '1990-01-01' AND '2000-12-31'
+GROUP BY species;
+
+/*Queries */
+/* What animals belong to Melody Pond?*/
+SELECT a.name
+FROM animals a
+JOIN owners o ON a.owner_id = o.id
+WHERE o.full_name = 'Melody Pond';
+
+/*List of all animals that are Pokemon */
+SELECT a.name
+FROM animals a
+JOIN species s ON a.species_id = s.id
+WHERE s.names = 'Pokemon';
+
+
+/* List all owners and their animals (include owners with no animals)*/
+SELECT o.full_name, a.name
+FROM owners o
+LEFT JOIN animals a ON o.id = a.owner_id;
+
+
+/*How many animals are there per species?*/
+SELECT s.name, COUNT(a.id)
+FROM species s
+LEFT JOIN animals a ON s.id = a.species_id
+GROUP BY s.name;
+
+/*List all Digimon owned by Jennifer Orwell */
+SELECT a.name
+FROM animals a
+JOIN owners o ON a.owner_id = o.id
+JOIN species s ON a.species_id = s.id
+WHERE o.full_name = 'Jennifer Orwell'
+AND s .name = 'Digimon';
+
+
+/*List all animals owned by Dean Winchester that haven't tried to escape */
+SELECT a.name
+FROM animals a
+JOIN owners o ON a.owner_id = o.id
+WHERE o.full_name = 'Dean Winchester'
+AND a.escape_attempts = 0;
+
+
+/* Who owns the most animals?*/
+SELECT o.full_name, COUNT(a.id) AS total_animals
+FROM owners o
+JOIN animals a ON o.id = a.owner_id
+GROUP BY o.full_name
+ORDER BY total_animals DESC
+LIMIT 1;
+
+
+ /*Queries*/
+ /* Who was the last animal seen by William Tatcher?*/
+SELECT a.name, v.visit_date
+FROM visits v
+JOIN animals a ON v.animal_id = a.id
+JOIN vets vt ON v.vet_id = vt.id
+WHERE vt.name = 'William Tatcher'
+ORDER BY v.visit_date DESC
+LIMIT 1;
+
+
+/* How many different animals did Stephanie Mendez see?*/
+SELECT COUNT(DISTINCT v.animal_id)
+FROM visits v
+JOIN vets vt ON v.vet_id = vt.id
+WHERE vt.name = 'Stephanie Mendez';
+
+
+/*ist all vets and their specialties (include none)*/
+SELECT vt.name, s.name AS specialty
+FROM vets vt
+LEFT JOIN specializations sp ON vt.id = sp.vet_id
+LEFT JOIN species s ON sp.species_id = s.id;
+
+
+/* Animals that visited Stephanie Mendez between dates*/
+SELECT DISTINCT a.name
+FROM visits v
+JOIN animals a ON v.animal_id = a.id
+JOIN vets vt ON v.vet_id = vt.id
+WHERE vt.name = 'Stephanie Mendez'
+AND v.visit_date BETWEEN '2020-04-01' AND '2020-08-30';
+
+
+/*What animal has the most visits? */
+SELECT a.name, COUNT(*) AS total_visits
+FROM visits v
+JOIN animals a ON v.animal_id = a.id
+GROUP BY a.name
+ORDER BY total_visits DESC
+LIMIT 1;
+
+
+/* Who was Maisy Smith's first visit? */
+SELECT a.name, v.visit_date
+FROM visits v
+JOIN animals a ON v.animal_id = a.id
+JOIN vets vt ON v.vet_id = vt.id
+WHERE vt.name = 'Maisy Smith'
+ORDER BY v.visit_date
+LIMIT 1;
+
+
+/* Details for most recent visit*/
+SELECT a.name AS animal, vt.name AS vet, v.visit_date
+FROM visits v
+JOIN animals a ON v.animal_id = a.id
+JOIN vets vt ON v.vet_id = vt.id
+ORDER BY v.visit_date DESC
+LIMIT 1;
+
+
+/* Visits with vets NOT specialized in animal's species*/
+SELECT COUNT(*)
+FROM visits v
+JOIN animals a ON v.animal_id = a.id
+LEFT JOIN specializations sp
+ON v.vet_id = sp.vet_id AND a.species_id = sp.species_id
+WHERE sp.vet_id IS NULL;
+
+
+/* What specialty should Maisy Smith consider? */
+SELECT s.name, COUNT(*) AS visits_count
+FROM visits v
+JOIN animals a ON v.animal_id = a.id
+JOIN species s ON a.species_id = s.id
+JOIN vets vt ON v.vet_id = vt.id
+WHERE vt.name = 'Maisy Smith'
+GROUP BY s.name
+ORDER BY visits_count DESC
+LIMIT 1;
